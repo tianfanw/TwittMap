@@ -18,10 +18,10 @@ var config = {
     },
   },
   'twitter' : {
-    consumer_key: 'wMLBdSvB5EHfQxB4qr639C1Uv',
-    consumer_secret: '2ycFuMfvaewnuyUt9w74u9KIKDnKl546iNfkrmmgJIC3MfOoDg',
-    access_token: '1242584401-z3mXcrK6WPzpqOxNTiMqLsGpYW8c40Fcn04TDoR',
-    access_token_secret: 'nypszBb6sjLcXVYkm5uIopznUmmPJLbK4YUvbkgXnVccY',
+    consumer_key: '',
+    consumer_secret: '',
+    access_token: '',
+    access_token_secret: '',
   },
 };
 
