@@ -245,15 +245,6 @@ io.on('connection', function(socket){
 //   io.emit('tweets', [{text: 'hello'}]);
 // }, 1000);
 
-var isInitialize = false;
-fs.exists('init_file', function(exists) { 
-  if (exists) { 
-    isInitialize = false;
-  } else {
-    isInitialize = true;
-  }
-}); 
-
 function init () {
 
   var debug = require('debug')('TwittMap');
@@ -281,55 +272,58 @@ var connection = mysql.createConnection({
   port: dbconfig.port
 });
 
-if(isInitialize) {
-  async.series([
-    function connect(callback) {
-      connection.connect(callback);
-    },
-    function clear(callback) {
-      connection.query('DROP DATABASE IF EXISTS ' + dbconfig.database, callback);
-    },
-    function create_db(callback) {
-      connection.query('CREATE DATABASE ' + dbconfig.database, callback);
-    },
-    function use_db(callback) {
-      connection.query('USE ' + dbconfig.database, callback);
-    },
-  ], function (err, results) {
-    if (err) {
-      console.log('Exception initializing database.');
-      throw err;
-    } else {
-      console.log('Database initialization complete.');
-      fs.writeFile("init_file", "", function(err) {
-        if(err) {
-          console.log(err);
-        }
-      });
-      init();
-    }
-  });
-} else {
-  async.series([
-    function connect(callback) {
-      connection.connect(callback);
-    },
-    function clear(callback) {
-      connection.query('CREATE DATABASE IF NOT EXISTS ' + dbconfig.database, callback);
-    },
-    function use_db(callback) {
-      connection.query('USE ' + dbconfig.database, callback);
-    },
-  ], function (err, results) {
-    if (err) {
-      console.log('Exception initializing database.');
-      throw err;
-    } else {
-      console.log('Database initialization complete.');
-      init();
-    }
-  });
-}
+fs.exists('./init_file', function(exists) { 
+  if (exists) { 
+    async.series([
+      function connect(callback) {
+        connection.connect(callback);
+      },
+      function clear(callback) {
+        connection.query('CREATE DATABASE IF NOT EXISTS ' + dbconfig.database, callback);
+      },
+      function use_db(callback) {
+        connection.query('USE ' + dbconfig.database, callback);
+      },
+    ], function (err, results) {
+      if (err) {
+        console.log('Exception initializing database.');
+        throw err;
+      } else {
+        console.log('Database initialization complete.');
+        init();
+      }
+    });
+  } else {
+    async.series([
+      function connect(callback) {
+        connection.connect(callback);
+      },
+      function clear(callback) {
+        connection.query('DROP DATABASE IF EXISTS ' + dbconfig.database, callback);
+      },
+      function create_db(callback) {
+        connection.query('CREATE DATABASE ' + dbconfig.database, callback);
+      },
+      function use_db(callback) {
+        connection.query('USE ' + dbconfig.database, callback);
+      },
+    ], function (err, results) {
+      if (err) {
+        console.log('Exception initializing database.');
+        throw err;
+      } else {
+        console.log('Database initialization complete.');
+        fs.writeFile("./init_file", "", function(err) {
+          if(err) {
+            console.log(err);
+          }
+        });
+        init();
+      }
+    });
+  }
+});
+ 
 
 var cronJob = require('cron').CronJob;
 var dbAutoClearJob = new cronJob('0 0 0 7,14,21,28 * *', function(){
