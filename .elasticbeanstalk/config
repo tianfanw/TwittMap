@@ -1,0 +1,17 @@
+[global]
+ApplicationName=TwittMap
+ApplicationVersionName=git-06e4b829a4b8cd87c4c1e486033e3a180c0a099d-1414121805491
+AwsCredentialFile=/home/tianfanw/.elasticbeanstalk/aws_credential_file
+DevToolsEndpoint=git.elasticbeanstalk.us-east-1.amazonaws.com
+EnvironmentName=TwittMap-env
+EnvironmentTier=WebServer::Standard::1.0
+EnvironmentType=SingleInstance
+InstanceProfileName=aws-elasticbeanstalk-ec2-role
+OptionSettingFile=/home/tianfanw/6998/TwittMap/.elasticbeanstalk/optionsettings.TwittMap-env
+RdsDeletionPolicy=Delete
+RdsEnabled=Yes
+RdsSourceSnapshotName=
+Region=us-east-1
+ServiceEndpoint=https://elasticbeanstalk.us-east-1.amazonaws.com
+SolutionStack=32bit Amazon Linux 2014.03 v1.0.9 running Node.js
+
