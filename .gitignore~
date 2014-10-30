@@ -1,2 +1,4 @@
 node_modules/
+init_file
+config.js
 .gitignore
