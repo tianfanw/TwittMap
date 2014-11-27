@@ -1,0 +1,82 @@
+extends layout
+
+block append stylesheet
+  link(href='https://google-developers.appspot.com/maps/documentation/javascript/examples/default.css', rel='stylesheet', type='text/css')    
+
+block append javascript
+  script(src='/socket.io/socket.io.js')
+  script(type='text/javascript', src='https://maps.googleapis.com/maps/api/js?libraries=geometry,visualization')
+  script(src='/public/javascripts/twittmap.js')
+
+block content
+  #wrap
+    .navbar.navbar-static.navbar-inverse
+      .navbar-inner
+        .container(style='width: auto;')
+          a.brand(href='#') TwittMap
+          ul.nav(role='navigation')
+            li.dropdown
+              a#drop1.dropdown-toggle(href='#', role='button', data-toggle='dropdown')
+                | View
+              ul.dropdown-menu(role='menu', aria-labelledby='drop1')
+                li(role='presentation')
+                  a#scatter(role='menuitem', tabindex='-1', href='#') Scatter
+                li(role='presentation')
+                  a#heatmap(role='menuitem', tabindex='-1', href='#') Heatmap
+            li.dropdown
+              a#drop2.dropdown-toggle(href='#', role='button', data-toggle='dropdown')
+                | Keywords
+              ul#keywords.dropdown-menu(role='menu', aria-labelledby='drop2')
+                li(role='presentation')
+                  a#keywordall(role='menuitem', tabindex='-1', href='#') All
+                li.divider(role='presentation')
+                li(role='presentation')
+                  a#keyword0(role='menuitem', tabindex='-1', href='#') Keyword0
+                li(role='presentation')
+                  a#keyword1(role='menuitem', tabindex='-1', href='#') Keyword1
+                li(role='presentation')
+                  a#keyword2(role='menuitem', tabindex='-1', href='#') Keyword2
+                li(role='presentation')
+                  a#keyword3(role='menuitem', tabindex='-1', href='#') Keyword3
+                li(role='presentation')
+                  a#keyword4(role='menuitem', tabindex='-1', href='#') Keyword4
+            li.dropdown
+              a#drop3.dropdown-toggle(href='#', role='button', data-toggle='dropdown')
+                | Earlier Trends
+              ul.dropdown-menu(role='menu', aria-labelledby='drop3')
+                li(role='presentation')
+                  a#current(role='menuitem', tabindex='-1', href='#') Current
+                li.divider(role='presentation')
+                li(role='presentation')
+                  a#lasthour(role='menuitem', tabindex='-1', href='#') Last hour
+                li(role='presentation')
+                  a#last2hours(role='menuitem', tabindex='-1', href='#') Last 2 hours
+                li(role='presentation')
+                  a#last4hours(role='menuitem', tabindex='-1', href='#') Last 4 hours
+                li(role='presentation')
+                  a#last12hours(role='menuitem', tabindex='-1', href='#') Last 12 hours
+                li(role='presentation')
+                  a#lastday(role='menuitem', tabindex='-1', href='#') Last day
+                li(role='presentation')
+                  a#last3days(role='menuitem', tabindex='-1', href='#') Last 3 days
+                li(role='presentation')
+                  a#lastweek(role='menuitem', tabindex='-1', href='#') Last week
+
+    .container
+      .row
+        .span9
+          #map_canvas
+        .span3#tweets
+          .row
+            p#tweetstitle Trending Topics:
+            p#keywordnames
+          .row
+            ul#tweetlist
+
+    #push
+
+  #footer
+    .container
+        p.muted.credit
+          | COMS6998 Homework1 TwittMap 
+          a(href='mailto:tw2484@columbia.edu') Tianfan Wang (tw2484@columbia.edu)
