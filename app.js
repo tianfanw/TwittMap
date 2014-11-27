@@ -54,7 +54,6 @@ app.use(function(err, req, res, next) {
     });
 });
 
-
 //Setup twitter stream api
 var util = require('util');
 var Twit = require('twit');
@@ -96,7 +95,9 @@ function getTrends() {
   });
 }
 
-
+var nextTweet = {};
+nextTweet.status = 'empty';
+pushRate = 1000 * 2;  // push a tweet per 2 seconds since alchemyapi has limited 1000 calls per day
 
 function startStream() {
   var stream = null;
@@ -109,67 +110,40 @@ function startStream() {
   setTimeout(function(){
     stream.stop();
     console.log("stream stoped");
-  },1000 * 60 * (updateInterval - 2));
+  },1000 * 60 * (updateInterval - 1));
 
   stream.on('tweet', function (tweet) {  
-    var t;
-    if (tweet.coordinates){
-      if(tweet.coordinates !== null) {
-        // console.log(tweet);
-        for(var i = 0; i < keywords.length; i++) {
-          if(tweet.text.indexOf(keywords[i]) > -1) {
-            t = {
-              keyword  : keywords[i],
-              text     : tweet.text,
-              time     : tweet.created_at,
-              latitude : tweet.coordinates.coordinates[0],
-              longitude: tweet.coordinates.coordinates[1],
-              user     : tweet.user.name,
-              profile  : tweet.user.profile_image_url,
-            };
-            io.emit('tweet', t);
-            // tweet[count] = t;
-            // count++;
-            // if(count == 5) {
-            //   models.Tweet.bulkCreate(tweets).complete(function(err) {
-            //     if(!!err) {
-            //       console.log("An error occurred while dumping data:", err);
-            //     } else {
-            //       console.log("Successfully dumpled data!");
-            //     }
-            //   })
-            //   count = 0;
-            // }
-            models.Tweet.create(t).complete(function(err) {
-              if(!!err) {
-                console.log("An error occurred while dumping data:", err);
-              } else {
-                console.log("Successfully dumpled data!");
-              }
-            });
-            break;
+    if(nextTweet.status != 'ready') {
+      var t;
+      if (tweet.coordinates){
+        if(tweet.coordinates !== null) {
+          // console.log(tweet);
+          for(var i = 0; i < keywords.length; i++) {
+            if(tweet.text.indexOf(keywords[i]) > -1) {
+              t = {
+                keyword  : keywords[i],
+                text     : tweet.text,
+                time     : tweet.created_at,
+                latitude : tweet.coordinates.coordinates[0],
+                longitude: tweet.coordinates.coordinates[1],
+                user     : tweet.user.name,
+                profile  : tweet.user.profile_image_url,
+              };
+              nextTweet.tweet = t;
+              nextTweet.status = 'ready';
+              
+              // io.emit('tweet', t);
+              // models.Tweet.create(t).complete(function(err) {
+              //   if(!!err) {
+              //     console.log("An error occurred while dumping data:", err);
+              //   } else {
+              //     console.log("Successfully dumpled data!");
+              //   }
+              // });
+              break;
+            }
           }
         }
-        // tweets[count] = {
-        //   "id"       : data.id_str, 
-        //   "track"    : tweet.track
-        //   "time"     : data.created_at, 
-        //   "latitude" : data.coordinates.coordinates[0], 
-        //   "longitude": data.coordinates.coordinates[1],
-        //   "text"     : data.text
-        // };
-    //     io.emit('tweets', [tweets[count]]);
-    //     count++;
-    //     if(count == 10) {
-    //       models.Tweet.bulkCreate(tweets).complete(function(err) {
-    //         if(!!err) {
-    //           console.log("An error occurred while dumping data:", err);
-    //         } else {
-    //           console.log("Successfully dumpled data!");
-    //         }
-    //       })
-    //       count = 0;
-    //     }
       }
     }
   });
@@ -187,6 +161,32 @@ function startStream() {
   stream.on('reconnect', function (request, response, connectInterval) {
     console.log("reconnect to Twitter");
   });
+}
+
+//Create the AlchemyAPI object
+var AlchemyAPI = require('./alchemyapi');
+var alchemyapi = new AlchemyAPI();
+function sentimentAnalysis(text) {
+  alchemyapi.sentiment('text', text, {}, function(response) {
+    console.log(response['docSentiment']);
+  });
+}
+
+function pushTweet() {
+  if(nextTweet.status == 'ready') {
+    var t = nextTweet.tweet;
+    io.emit('tweet', t);
+    nextTweet.status = 'sent';
+    models.Tweet.create(t).complete(function(err) {
+      if(!!err) {
+        console.log("An error occurred while dumping data:", err);
+      } else {
+        console.log("Successfully dumpled data!");
+        // performSentimentAnalysis
+        sentimentAnalysis(t.text);
+      }
+    });
+  }
 }
 
 // Send tweets in db, if db empty or outdated, then send new data from twitter stream
@@ -260,6 +260,7 @@ function init () {
       });
       getTrends();
       setInterval(getTrends, 1000 * 60 * updateInterval);
+      setInterval(pushTweet, pushRate);
     }
   });
 }

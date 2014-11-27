@@ -23,6 +23,9 @@ var config = {
     access_token: '1242584401-z3mXcrK6WPzpqOxNTiMqLsGpYW8c40Fcn04TDoR',
     access_token_secret: 'nypszBb6sjLcXVYkm5uIopznUmmPJLbK4YUvbkgXnVccY',
   },
+  'alchemyapi' : {
+    api_key : '6bff4997a0f77f5deb69c066aae5c7c257e33851',
+  },
 };
 
 module.exports = config;
