@@ -26,11 +26,11 @@ function initialize() {
 
   var numKeywords = 5;  
   var markerImgs = [
-  '/images/blue-dot-md.png', 
-  '/images/green-dot-md.png',
-  '/images/neon-green-dot-md.png',
-  '/images/purple-dot-md.png',
-  '/images/red-dot-md.png',
+  'public/images/blue-dot-md.png', 
+  'public/images/green-dot-md.png',
+  'public/images/neon-green-dot-md.png',
+  'public/images/purple-dot-md.png',
+  'public/images/red-dot-md.png',
   ];
   var heatmapData = [];
   for(var i = 0; i < numKeywords + 1; i++) {
