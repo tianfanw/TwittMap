@@ -1,4 +1,4 @@
-# COMS6998 Homework1 TwittMap
+# COMS6998 Homework2 TwittMap
 =============================
 
 ## EBS URL
@@ -18,5 +18,6 @@ or
 $npm start
 The app is available at 127.0.0.1:3000 by default.
 
-5. To deploy the app on AWS, you need to append all the routes of static files with "/public" to fit the route of nginx server. Edit twittmap.js, index.jade and layout.jade.
-
+5. To deploy the app on AWS EBS, you need to create the environment either from the console or through the CLI first, then run
+$git aws.push 
+to push the app onto AWS EBS.
