@@ -26,6 +26,11 @@ var config = {
   'alchemyapi' : {
     api_key : '6bff4997a0f77f5deb69c066aae5c7c257e33851',
   },
+  'aws' : {
+    region: 'us-east-1',
+    accessKeyId: 'AKIAI7TCSMISY6GKFKZQ',
+    secretAccessKey: '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',
+  },
 };
 
 module.exports = config;

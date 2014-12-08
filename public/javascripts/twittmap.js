@@ -36,7 +36,11 @@ function initialize() {
   for(var i = 0; i < numKeywords + 1; i++) {
     heatmapData[i] = new google.maps.MVCArray();
   }
-  var markers = [];
+  var sentimentHeatmapData = [];
+  for(var i = 0; i < numKeywords + 1; i++) {
+    sentimentHeatmapData[i] = new google.maps.MVCArray();
+  }
+  markers = [];
   for(var i = 0; i < numKeywords + 1; i++) {
     markers[i] = [];
   }
@@ -44,8 +48,10 @@ function initialize() {
   var heatmap = new google.maps.visualization.HeatmapLayer({
     data: [],
     radius: 20,
+    maxIntensity: 10,
     map: map
   });
+
 
   var socket = io();
   var maxTweets = 500;
@@ -64,9 +70,13 @@ function initialize() {
     for(var i = 0; i < numKeywords + 1; i++) {
       heatmapData[i].clear();
     }
+    for(var i = 0; i < numKeywords + 1; i++) {
+      sentimentHeatmapData[i].clear();
+    }
     heatmap.setData([]);
     for(var i = 0; i < numKeywords + 1; i++) {
       for(var j = 0; j < markers[i].length; j++) {
+        google.maps.event.clearInstanceListeners(markers[i][j]);
         markers[i][j].setMap(null);
       }
       markers[i].length = 0;
@@ -105,9 +115,43 @@ function initialize() {
   //   animation: google.maps.Animation.DROP,
   //   }
   // }
+  var infowindow = new google.maps.InfoWindow();
+  function addMouseEvent(marker) {
+    google.maps.event.addListener(marker, 'click', function() {
+      infowindow.setContent('<div class="popup-tweet" style="background-color:' + marker.color + '">' + marker.content + '<p align="right">Sentiment Score: ' + marker.score + ' </p></div>');
+      infowindow.open(map, marker);
+    });
+    // google.maps.event.addListener(marker, 'mouseout', function() {
+    //   infowindow.close(map,marker);
+    // });
+  }
+
+  function dec2hex(dec) {
+    return ('0' + Number(parseInt( dec , 10)).toString(16)).slice(-2);
+  }
+
+  function scoreToColor(score) {
+    // return -1
+    var r = 'ff';
+    var g = '00';
+    var b = 'ff';
+    if(score < 0) {
+      r = dec2hex(255 + score * 255);
+    } else if (score > 0) {
+      b = dec2hex(255 - score * 255);
+    }
+    var color = '#' + r + g + b;
+    return color;
+  }
+
+  function scoreToWeight(score) {
+    // if(score > 0) return 1;
+    // else return 0;
+    return 1;
+  }
+
   socket.on('tweet', function(res){
     if(keywords.indexOf(res.keyword) > -1) {
-      res.keywords
       tweets[curIdx] = res;
       var latLng = new google.maps.LatLng(res.longitude, res.latitude);
       heatmapData[numKeywords].push({
@@ -115,12 +159,27 @@ function initialize() {
         weight: 1
       });
 
+      var latLng = new google.maps.LatLng(res.longitude, res.latitude);
+      sentimentHeatmapData[numKeywords].push({
+        location: latLng,
+        weight: scoreToWeight(res.score)
+      });
+
       var keywordIndex = keywordsIndices[tweets[curIdx].keyword];
       heatmapData[keywordIndex].push({
         location: latLng,
         weight: 1
       });
+
+      var keywordIndex = keywordsIndices[res.keyword];
+      sentimentHeatmapData[keywordIndex].push({
+        location: latLng,
+        weight: scoreToWeight(res.score)
+      });
+
       var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+      var content = '<img src="' + tweets[curIdx].profile + '"/> <span>' + tweets[curIdx].user + ': '
+          + tweets[curIdx].text + '</span>';
       var marker = new google.maps.Marker({
         position: latLng,
         map: map,
@@ -131,7 +190,7 @@ function initialize() {
           category: tweets[curIdx].keyword,
           // origin: new google.maps.Point(0,0), // origin
           // anchor: new google.maps.Point(30,30) // anchor 
-         }
+         },
         // icon: {
         //   path: google.maps.SymbolPath.CIRCLE,
         //   fillColor: 'red',
@@ -140,12 +199,17 @@ function initialize() {
         //   strokeColor: 'white',
         //   strokeWeight: .5
         // }
+        content: content,
+        id: res.id,
+        score: res.score,
+        color: scoreToColor(res.score)
       });
       setTimeout(function(){
         if (marker.getAnimation() != null) {
           marker.setAnimation(null);
         }
       },2000);
+      addMouseEvent(marker);
       if(!((currentView == viewScatter) && (currentKeyword == keywordIndex || currentKeyword == numKeywords))) {
         marker.setVisible(false);
       }
@@ -153,10 +217,20 @@ function initialize() {
       markers[keywordIndex].push(marker);
       markers[numKeywords].push(marker);
       
-      $('#tweetlist').prepend(
-        $('<li>').append(
-          '<img src="' + tweets[curIdx].profile + '"/> <span>' + tweets[curIdx].user + ': '
-          + tweets[curIdx].text + '</span>'));
+      $('#tweetlist').prepend('<li id =' + res.id + '>' + content + '</li>');
+      $('li#' + res.id).click(function() {
+        if(currentView == viewScatter) {
+          var id = $(this).attr('id');
+          var r = markers[5].filter(function(el) {
+            return el.id == id;
+          });
+          if(r.length > 0) {
+            var marker = r[0];
+            infowindow.setContent('<div class="popup-tweet" style="background-color:' + marker.color + '">' + marker.content + '<p align="right">Sentiment Score: ' + marker.score + ' </p></div>');
+            infowindow.open(map, marker);
+          }
+        }
+      });
       if(maxTweetsReached) {
         $('#tweetlist li:last').remove();
       }
@@ -177,12 +251,26 @@ function initialize() {
         weight: 1
       });
 
+      sentimentHeatmapData[numKeywords].push({
+        location: latLng,
+        weight: scoreToWeight(res[i].score)
+      });
+
       var keywordIndex = keywordsIndices[tweets[curIdx].keyword];
+      console.log(keywordIndex);
+      console.log(tweets[curIdx].keyword);
       heatmapData[keywordIndex].push({
         location: latLng,
         weight: 1
       });
+      sentimentHeatmapData[keywordIndex].push({
+        location: latLng,
+        weight: scoreToWeight(res[i].score)
+      });
+
       var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+      var content = '<img src="' + tweets[curIdx].profile + '"/> <span>' + tweets[curIdx].user + ': '
+          + tweets[curIdx].text + '</span>';
       var marker = new google.maps.Marker({
         position: latLng,
         map: map,
@@ -192,7 +280,7 @@ function initialize() {
           category: tweets[curIdx].keyword,
           // origin: new google.maps.Point(0,0), // origin
           // anchor: new google.maps.Point(30,30) // anchor 
-         }        
+         },        
         // icon: {
         //   path: google.maps.SymbolPath.CIRCLE,
         //   fillColor: 'red',
@@ -201,17 +289,34 @@ function initialize() {
         //   strokeColor: 'white',
         //   strokeWeight: .5
         // }
+        content: content,
+        id: res[i].id,
+        score: res[i].score,
+        color: scoreToColor(res[i].score)
       });
+      addMouseEvent(marker);
       if(!((currentView == viewScatter) && (currentKeyword == keywordIndex || currentKeyword == numKeywords))) {
         marker.setVisible(false);
       }
       markers[keywordIndex].push(marker);
       markers[numKeywords].push(marker);
       
-      $('#tweetlist').append(
-        $('<li>').append(
-          '<img src="' + tweets[curIdx].profile + '"/> <span>' + tweets[curIdx].user + ': '
-          + tweets[curIdx].text + '</span>'));
+      // $('#tweetlist').append(
+      //   $('<li>').append(content));
+      $('#tweetlist').prepend('<li id =' + res[i].id + ' >' + content + '</li>');
+      $('li#' + res[i].id).click(function() {
+        if(currentView == viewScatter) {
+          var id = $(this).attr('id');
+          var r = markers[5].filter(function(el) {
+            return el.id == id;
+          });
+          if(r.length > 0) {
+            var marker = r[0];
+            infowindow.setContent('<div class="popup-tweet" style="background-color:' + marker.color + '">' + marker.content + '<p align="right">Sentiment Score: ' + marker.score + ' </p></div>');
+            infowindow.open(map, marker);
+          }
+        }
+      });
       if(maxTweetsReached) {
         $('#tweetlist li:last').remove();
       }
@@ -226,6 +331,7 @@ function initialize() {
   // Toggle map display
   var viewScatter = 0;
   var viewHeatmap = 1;
+  var viewSentimentHeatmap = 2;
   var currentView = viewScatter;
   var currentKeyword = numKeywords;
   $("#scatter").click( function() {
@@ -238,19 +344,47 @@ function initialize() {
     }
   });
   $("#heatmap").click( function() {
-    if(currentView != viewHeatmap) {
+    if(currentView == viewScatter) {
       for(var i = 0; i < markers[currentKeyword].length; i++) {
         markers[currentKeyword][i].setVisible(false);
       }
+      heatmap.set('gradient', null);
       heatmap.setData(heatmapData[currentKeyword]);
-      currentView = viewHeatmap;
+    } else if (currentView == viewSentimentHeatmap) {
+      heatmap.set('gradient', null);
+      heatmap.setData(heatmapData[currentKeyword]);
     }
+    currentView = viewHeatmap;
+  });
+  $("#sentimentHeatmap").click( function() {
+    if(currentView == viewScatter) {
+      for(var i = 0; i < markers[currentKeyword].length; i++) {
+        markers[currentKeyword][i].setVisible(false);
+      }
+      heatmap.set('gradient', [
+      'rgba(0, 0, 255, 0)',
+      'rgba(0, 0, 255, 1)',
+      'rgba(255, 0, 255, 1)',
+      'rgba(255, 0, 0, 1)']);
+      heatmap.setData(sentimentHeatmapData[currentKeyword]);
+    } else if(currentView == viewHeatmap) {
+      heatmap.set('gradient', [
+      'rgba(0, 0, 255, 0)',
+      'rgba(0, 0, 255, 1)',
+      'rgba(255, 0, 255, 1)',
+      'rgba(255, 0, 0, 1)']);
+      heatmap.setData(sentimentHeatmapData[currentKeyword]);
+    }
+    currentView = viewSentimentHeatmap;
   });
 
   $("#keyword0").click( function() {
     if(currentKeyword != 0) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[0]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[0]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);
@@ -266,6 +400,9 @@ function initialize() {
     if(currentKeyword != 1) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[1]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[1]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);
@@ -281,6 +418,9 @@ function initialize() {
     if(currentKeyword != 2) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[2]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[2]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);
@@ -296,6 +436,9 @@ function initialize() {
     if(currentKeyword != 3) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[3]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[3]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);
@@ -311,6 +454,9 @@ function initialize() {
     if(currentKeyword != 4) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[4]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[4]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);
@@ -326,6 +472,9 @@ function initialize() {
     if(currentKeyword != numKeywords) {
       if(currentView == viewHeatmap)
         heatmap.setData(heatmapData[numKeywords]);
+      else if(currentView == viewSentimentHeatmap) {
+        heatmap.setData(sentimentHeatmapData[numKeywords]);
+      }
       else {
         for(var i = 0; i < markers[currentKeyword].length; i++) {
           markers[currentKeyword][i].setVisible(false);

@@ -10,6 +10,7 @@ module.exports = function(sequelize, DataTypes) {
     longitude: DataTypes.FLOAT,
     user     : DataTypes.STRING,
     profile  : DataTypes.STRING,
+    score    : {type: DataTypes.FLOAT, defaultValue: 0.0},
   }, {
     charset: 'utf8',
     timestamps: false,

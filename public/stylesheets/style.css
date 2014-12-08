@@ -21,6 +21,7 @@ a {
 
 #tweets {
   height: 500px;
+  color: #FFF;
 }
 
 #tweetstitle {
@@ -47,6 +48,7 @@ a {
 #tweetlist li{
   margin-bottom: 10px;
   font-size: 12px;
+  cursor: pointer;
 }
 
 #wrap {
