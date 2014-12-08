@@ -23,6 +23,14 @@ var config = {
     access_token: '',
     access_token_secret: '',
   },
+  'alchemyapi' : {
+    api_key : '',
+  },
+  'aws' : {
+    region: '',
+    accessKeyId: '',
+    secretAccessKey: '',
+  },
 };
 
 module.exports = config;
