@@ -428,7 +428,7 @@ function init () {
         initAWS({
           queueName: 'demo',
           topicName: 'demo',
-          endpointUrl: 'http://twittmap-env-zucbn2hrys.elasticbeanstalk.com' // 'http://5ec59e40.ngrok.com'
+          endpointUrl: 'http://twittmap-env-dsy5t6jhe3.elasticbeanstalk.com/' // 'http://5ec59e40.ngrok.com'
         }, function(err) {
           if(err !== null) {
             console.log(err);
