@@ -2,7 +2,7 @@
 =============================
 
 ## EBS URL
-http://twittmap-env-zucbn2hrys.elasticbeanstalk.com/
+http://twittmap-env-dsy5t6jhe3.elasticbeanstalk.com/
 
 ## Installation
 1. To run the app, you need to have mysql and node.js installed. (you may need to install npm as well)
